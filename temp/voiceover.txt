@@ -1,0 +1,101 @@
+Hello. I made an experimental open vision system that sees through a camera and answers the user questions. it has a big describe button that captures and describes what it sees using a local offline LLM and reads it alaud. the user is able to hold the button to ask.
+I proggressed so far with the software and did some steps for a hardware to design an eyeglass add on that works offline with your phone and an LLM. The project is available on Github publicly. in this video I want to introduce the project to this step.
+
+The repository is organised into a few main parts.
+At the core is **index.html** — the web application itself, which runs the vision interface and connects the camera feed with AI processing.
+The **firmware** folder contains the software for the ESP32 camera hardware.
+The **hardware** folder contains the physical designs: 3D-printable mounts, camera enclosures, a pocket hub, and alternative laser-cut designs.
+Inside **docs** are the complete build guide, available both as a PDF and a web page.
+There’s also the **README**, which introduces the project, along with separate licenses for the software, hardware, and documentation.
+So the repository brings together the full project: the AI interface, camera firmware, physical hardware designs, and the instructions needed to build it.
+
+The Build Guide explains how to turn OpenVision into a working pair of AI glasses.
+It covers the complete process, from buying compatible components and programming the ESP32 camera to printing the enclosure, soldering the connections, and mounting everything onto ordinary glasses.
+It also explains how to set up the phone, install the AI model, configure voice interaction, and connect everything together.
+
+for this video i'm running it on my laptop. with ollama open and qwen3 installed. at the startup I have to wait to load the model. there is also a device check that you can trubleshoot any of them with the docs.
+then here are the setting for the input. select the camera, your phone, a designed eyeglass addon or anything else.
+as in docs, I connected my ESP32 and now I can use it to describe. or hold to ask. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+V2:
+
+# OpenVision — Project Introduction
+
+OpenVision is an experimental offline vision system.
+
+It uses a camera to see the environment, a local language model to interpret what it sees, and voice interaction to communicate with the user.
+
+The main interaction is deliberately simple: press the Describe button, and OpenVision captures an image, describes it, and reads the result aloud.
+
+You can also hold the button to ask a question about what the camera sees.
+
+The project has progressed beyond the software. I've also been working on a hardware design for an eyeglass add-on that connects to a phone and uses its local processing capabilities to run the vision model offline.
+
+Both the software and hardware development are publicly available on GitHub.
+
+## The repository
+
+The repository brings together the web application, ESP32 camera firmware, physical hardware designs, and a complete build guide.
+
+The hardware files include 3D-printable mounts, camera enclosures, a pocket hub, and alternative laser-cut designs. The documentation is available as both a PDF and a web page, alongside separate licenses for the different parts of the project.
+
+## The build guide
+
+The build guide takes you through the process of turning OpenVision into a working eyeglass setup.
+
+It covers component selection, programming the ESP32 camera, printing the enclosure, soldering the connections, and mounting the hardware onto ordinary glasses.
+
+It also covers the phone-side setup: installing the local AI model, configuring voice interaction, and connecting all the components.
+
+The idea is to make the project reproducible rather than leave the hardware and software as disconnected experiments.
+
+## Live demonstration
+
+For this demonstration, I'm running OpenVision on my laptop, using Ollama with Qwen3 installed locally.
+
+At startup, the application needs a little time to load the model. Once it's ready, we can check the connected devices.
+
+The device check helps identify connection problems, and the documentation includes troubleshooting instructions for each component.
+
+Next, we have the input settings.
+
+You can select the camera source here. That could be your phone, the designed eyeglass add-on, or another compatible camera.
+
+For this demonstration, I've connected the ESP32 camera following the build guide.
+
+Now I can use the main Describe button.
+
+OpenVision captures what the camera sees, sends the image to the local model, and reads the description aloud.
+
+And if I hold the button, I can ask a question about the scene instead.
+
+## Closing
+
+This is where OpenVision stands today.
+
+The software is working, the ESP32 camera is integrated, and the hardware designs and build instructions are available publicly.
+
+There is still work ahead, particularly in developing and refining the eyeglass hardware, but the foundation is here.
+
+I wanted to make the project available as an open development rather than keep the design and implementation to myself.
+
+You can explore the repository, follow the build guide, experiment with the software, or contribute your own improvements.
+
+The goal is to make offline, camera-based AI assistance something people can actually build and experiment with.
+
+Thanks for watching.
