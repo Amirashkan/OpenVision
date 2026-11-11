@@ -94,4 +94,10 @@ See the detailed guide in `docs/OpenVision_Build_Guide.pdf` for parts, wiring, f
 
 ## License
 
-No license has been selected yet. Until a license is added, the repository's contents remain subject to their applicable default copyright protections. Please contact the author before reusing the code or hardware designs.
+Unless a file or component states otherwise, the original OpenVision source code and firmware in this repository are licensed under the **Apache License 2.0**. See [LICENSE](LICENSE).
+
+Original hardware design files (including OpenSCAD, STL, and DXF files) are licensed under **CERN Open Hardware Licence Version 2 – Permissive (CERN-OHL-P-2.0)**. See [HARDWARE-LICENSE](HARDWARE-LICENSE).
+
+Project documentation, including the build guide, is licensed under **Creative Commons Attribution 4.0 International (CC BY 4.0)**. See [DOCUMENTATION-LICENSE](DOCUMENTATION-LICENSE).
+
+These licenses apply only to material you have the right to license. Third-party libraries, model weights, datasets, names, and other third-party assets remain under their own terms. In particular, the listed AI models are not relicensed by this repository; check each model's upstream license and usage conditions before downloading or redistributing it.
