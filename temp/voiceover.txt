@@ -1,38 +1,3 @@
-Hello. I made an experimental open vision system that sees through a camera and answers the user questions. it has a big describe button that captures and describes what it sees using a local offline LLM and reads it alaud. the user is able to hold the button to ask.
-I proggressed so far with the software and did some steps for a hardware to design an eyeglass add on that works offline with your phone and an LLM. The project is available on Github publicly. in this video I want to introduce the project to this step.
-
-The repository is organised into a few main parts.
-At the core is **index.html** — the web application itself, which runs the vision interface and connects the camera feed with AI processing.
-The **firmware** folder contains the software for the ESP32 camera hardware.
-The **hardware** folder contains the physical designs: 3D-printable mounts, camera enclosures, a pocket hub, and alternative laser-cut designs.
-Inside **docs** are the complete build guide, available both as a PDF and a web page.
-There’s also the **README**, which introduces the project, along with separate licenses for the software, hardware, and documentation.
-So the repository brings together the full project: the AI interface, camera firmware, physical hardware designs, and the instructions needed to build it.
-
-The Build Guide explains how to turn OpenVision into a working pair of AI glasses.
-It covers the complete process, from buying compatible components and programming the ESP32 camera to printing the enclosure, soldering the connections, and mounting everything onto ordinary glasses.
-It also explains how to set up the phone, install the AI model, configure voice interaction, and connect everything together.
-
-for this video i'm running it on my laptop. with ollama open and qwen3 installed. at the startup I have to wait to load the model. there is also a device check that you can trubleshoot any of them with the docs.
-then here are the setting for the input. select the camera, your phone, a designed eyeglass addon or anything else.
-as in docs, I connected my ESP32 and now I can use it to describe. or hold to ask. 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-V2:
 
 # OpenVision — Project Introduction
 
