@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>OpenVision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
+    --accent: #3fb6a8; --accent-ink: #04201c; --warn: #d29922; --err: #f85149; --ok: #3fb950;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 12px 16px 40px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  h1 { font-size: 18px; margin: 0; letter-spacing: .3px; }
+  .pill { font-size: 12px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .pill.ok { color: var(--ok); border-color: #23462c; } .pill.busy { color: var(--warn); border-color: #4d3a12; }
+  .pill.err { color: var(--err); border-color: #5a2224; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row + .row { margin-top: 8px; }
+  button, select, input[type=text] {
+    font: inherit; color: var(--text); background: #0f141a; border: 1px solid var(--line);
+    border-radius: 9px; padding: 9px 12px; min-height: 42px;
+  }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .45; cursor: default; }
+  input[type=text] { flex: 1; min-width: 0; }
+  select { flex: 1; min-width: 0; }
+  label.chk { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+  .bar { height: 6px; background: #0f141a; border-radius: 99px; overflow: hidden; margin-top: 8px; display: none; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .small { font-size: 12.5px; color: var(--muted); }
+
+  /* the one button */
+  .stage { display: grid; justify-items: center; gap: 12px; padding: 8px 0 4px; }
+  #bigBtn {
+    width: min(64vw, 240px); aspect-ratio: 1; border-radius: 50%; padding: 18px;
+    background: var(--accent); color: var(--accent-ink); border: 0; font-weight: 600; font-size: 17px;
+    display: grid; place-items: center; text-align: center; line-height: 1.3;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none;
+    box-shadow: 0 0 0 6px rgba(63,182,168,.15); transition: transform .08s, box-shadow .2s, background .2s;
+  }
+  #bigBtn:active, #bigBtn.held { transform: scale(.96); }
+  #bigBtn.listening { background: var(--err); color: #fff; box-shadow: 0 0 0 10px rgba(248,81,73,.2); }
+  #bigBtn.thinking, #bigBtn.capturing { background: #2a313c; color: var(--text); }
+  #bigBtn:disabled { opacity: .45; }
+  #bigBtn small { display: block; font-weight: 400; font-size: 13px; opacity: .8; margin-top: 4px; }
+  #thumb { max-width: 160px; max-height: 120px; border-radius: 8px; border: 1px solid var(--line); background: #000; display: none; }
+  #thumb.show { display: block; }
+  /* hidden but still rendered, so frames decode */
+  #video { position: fixed; width: 2px; height: 2px; opacity: 0; pointer-events: none; left: 0; top: 0; }
+
+  #askPanel { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .answer { white-space: pre-wrap; min-height: 1.4em; margin-top: 10px; }
+  .log { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; }
+  .log li { padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .log li:first-child { border-top: 0; }
+  .log time { color: var(--muted); font-size: 12px; margin-inline-end: 6px; font-variant-numeric: tabular-nums; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  pre.diag { white-space: pre-wrap; font-size: 12px; color: var(--muted); margin: 8px 0 0; direction: ltr; text-align: left; }
+  [dir=rtl] body, [dir=rtl] button, [dir=rtl] select, [dir=rtl] input { font-family: Vazirmatn, Tahoma, system-ui, sans-serif; }
+  [dir=rtl] h2 { letter-spacing: 0; }
+  #langSel { flex: 0 0 auto; min-height: 32px; padding: 3px 8px; font-size: 13px; }
+  .hidden { display: none !important; }
+
+  /* Wi-Fi camera image settings */
+  #espImg { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
+  #espPrev { display: none; width: 100%; max-width: 420px; border-radius: 8px; border: 1px solid var(--line); background: #000; margin-top: 8px; }
+  #espPrev.show { display: block; }
+  .ctl { display: grid; grid-template-columns: minmax(96px, 38%) 1fr 3.2em; gap: 10px 10px; align-items: center; margin-top: 12px; }
+  .ctl > label { font-size: 14px; color: var(--muted); }
+  .ctl > .val { font-size: 13px; color: var(--muted); text-align: end; font-variant-numeric: tabular-nums; }
+  .ctl > .wide { grid-column: 2 / 4; }
+  .ctl input[type=range] { width: 100%; accent-color: var(--accent); min-height: 32px; margin: 0; }
+  .ctl input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--accent); justify-self: start; margin: 0; }
+  .ctl select { min-height: 38px; padding: 6px 10px; }
+  .ctl .dim { opacity: .4; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>OpenVision</h1>
+    <div class="row" style="flex-wrap:nowrap;gap:6px">
+      <select id="langSel" aria-label="Language"><option value="en">English</option><option value="fa">فارسی</option></select>
+      <span id="status" class="pill">model not loaded</span>
+    </div>
+  </header>
+
+  <!-- 1. Model -->
+  <section>
+    <h2 data-i18n="hModel">1 · Model</h2>
+    <div class="row">
+      <select id="modelSel">
+        <option value="qwen3vl-2b">Qwen3-VL 2B · ~1.4 GB · recommended</option>
+        <option value="qwen35-08b">Qwen3.5 0.8B · ~0.65 GB · lightest, fastest</option>
+        <option value="gemma4-e2b">Gemma 4 E2B · ~3.2 GB</option>
+        <option value="gemma4-e4b">Gemma 4 E4B · ~5 GB · may run out of memory</option>
+      </select>
+      <button id="loadBtn" class="primary" data-i18n="load">Load</button>
+    </div>
+    <div class="row">
+      <span class="small" data-i18n="precision">Precision</span>
+      <select id="dtypeSel">
+        <option value="auto">Auto (best for this model)</option>
+        <option value="q4">q4 · most compatible</option>
+        <option value="q4f16">q4f16 · smaller, fastest, can glitch on some GPUs</option>
+      </select>
+    </div>
+    <div class="bar" id="bar"><div></div></div>
+    <div class="small" id="loadInfo" data-i18n="loadHint" style="margin-top:6px">First load downloads the model over the internet (use Wi-Fi) and caches it in Chrome. After that it runs offline.</div>
+    <details style="margin-top:8px">
+      <summary data-i18n="devCheck">Device check</summary>
+      <pre class="diag" id="diag">checking…</pre>
+    </details>
+  </section>
+
+  <!-- 2. The button -->
+  <section>
+    <div class="stage">
+      <button id="bigBtn" disabled></button>
+      <canvas id="thumb" aria-label="Last captured frame"></canvas>
+    </div>
+    <div id="askPanel" class="hidden">
+      <div class="small" id="askHint" data-i18n="askHint">Ask about the captured frame. Speak, or type:</div>
+      <div class="row" style="margin-top:6px">
+        <input type="text" id="q" dir="auto" data-i18n-ph="qPh" placeholder="What does that sign say?" enterkeyhint="send">
+        <button id="sendBtn" class="primary" data-i18n="send">Send</button>
+        <button id="cancelBtn" data-i18n="cancel">Cancel</button>
+      </div>
+    </div>
+    <div class="answer" id="answer" dir="auto"></div>
+    <div class="small" id="perf"></div>
+  </section>
+
+  <!-- 3. Settings -->
+  <section>
+    <h2 data-i18n="hSettings">Settings</h2>
+    <div class="row">
+      <span class="small" data-i18n="camera">Camera</span>
+      <select id="camSel"><option value="auto">Auto (USB camera if connected)</option><option value="esp" data-i18n="camEsp">ESP32 Wi-Fi camera (glasses)</option></select>
+    </div>
+    <div class="row">
+      <span class="small" data-i18n="espAddr">Wi-Fi camera address</span>
+      <input type="text" id="espAddr" dir="ltr" inputmode="url" value="192.168.4.1">
+      <span class="pill" id="espState">–</span>
+    </div>
+    <details id="espImg" class="hidden">
+      <summary data-i18n="espImg">Wi-Fi camera image settings</summary>
+      <div class="row" style="margin-top:10px">
+        <button id="espPrevBtn" data-i18n="espPrevBtn">Test picture</button>
+        <button id="espResetBtn" data-i18n="espReset">Reset to defaults</button>
+      </div>
+      <img id="espPrev" alt="">
+      <div class="small" id="espImgMsg" style="margin-top:6px"></div>
+      <div class="ctl" id="espCtl"></div>
+    </details>
+    <div class="row">
+      <span class="small" data-i18n="detail">Image detail</span>
+      <select id="detailSel">
+        <option value="384" data-i18n="dLow">Low · least memory</option>
+        <option value="448" selected data-i18n="dNormal">Normal</option>
+        <option value="640" data-i18n="dHigh">High · reads small text, more crashes</option>
+      </select>
+    </div>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="speak" checked> <span data-i18n="speak">Read descriptions &amp; answers aloud</span></label>
+    </div>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="autoRecover" checked> <span data-i18n="autoRecover">Auto-recover if Chrome crashes ("Aw, Snap!")</span></label>
+    </div>
+  </section>
+
+  <!-- 4. Memory -->
+  <section>
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0" data-i18n="hSeen">What I've seen</h2>
+      <button id="clearBtn" style="min-height:32px;padding:4px 10px;font-size:13px" data-i18n="clear">Clear</button>
+    </div>
+    <ul class="log" id="log"></ul>
+  </section>
+</main>
+<video id="video" playsinline muted></video>
+
+<!-- ============ Inference worker (runs the model off the UI thread) ============ -->
+<script type="text/worker" id="workerSrc">
+import {
+  AutoProcessor, TextStreamer, RawImage, env,
+  Gemma4ForConditionalGeneration, Qwen3VLForConditionalGeneration, Qwen3_5ForConditionalGeneration,
+} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/dist/transformers.min.js";
+
+// Per-model differences: class, chat-template options, and how the processor is called.
+const gemmaCall = (p, text, img) => p(text, img, null, { add_special_tokens: false });
+const qwenCall  = (p, text, img) => img ? p(text, img) : p(text);
+const MODELS = {
+  // Note: on an NVIDIA desktop GPU, Qwen3-VL q4f16 repeats one word on long prompts (WebGPU bug);
+  // it works on the Galaxy S24 FE. If you see that, set Precision to q4.
+  "qwen3vl-2b": { id: "onnx-community/Qwen3-VL-2B-Instruct-ONNX", cls: Qwen3VLForConditionalGeneration, tpl: {}, call: qwenCall },
+  "qwen35-08b": { id: "onnx-community/Qwen3.5-0.8B-ONNX", cls: Qwen3_5ForConditionalGeneration, tpl: { enable_thinking: false }, call: qwenCall },
+  "gemma4-e2b": { id: "onnx-community/gemma-4-E2B-it-ONNX", cls: Gemma4ForConditionalGeneration, tpl: { enable_thinking: false }, call: gemmaCall },
+  "gemma4-e4b": { id: "onnx-community/gemma-4-E4B-it-ONNX", cls: Gemma4ForConditionalGeneration, tpl: { enable_thinking: false }, call: gemmaCall },
+};
+
+let processor = null, model = null, M = null, stage = "starting";
+const template = (messages) => processor.apply_chat_template(messages, { ...M.tpl, add_generation_prompt: true });
+// Strip any leftover <think>…</think> block some Qwen builds emit.
+const clean = (t) => t.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
+async function hasF16() {
+  try { const a = await navigator.gpu.requestAdapter(); return !!a && a.features.has("shader-f16"); }
+  catch { return false; }
+}
+
+self.onmessage = async ({ data }) => {
+  try {
+    if (data.type === "load") {
+      if (!("gpu" in navigator)) throw new Error("WebGPU is not available in this browser.");
+      M = MODELS[data.modelKey];
+      // Look in ./models/<id>/ next to this page first (offline copy), then fall back to Hugging Face.
+      env.allowLocalModels = true;
+      env.localModelPath = data.localPath;
+      const f16 = await hasF16();
+      let dtype = data.dtype !== "auto" ? data.dtype : (M.dtype ? M.dtype(f16) : (f16 ? "q4f16" : "q4"));
+      if (dtype === "q4f16" && !f16) dtype = "q4";
+      stage = "downloading / reading files";
+      processor = await AutoProcessor.from_pretrained(M.id);
+      model = await M.cls.from_pretrained(M.id, {
+        dtype, device: "webgpu",
+        progress_callback: (p) => {
+          if (p.status === "progress_total") {
+            self.postMessage({ type: "progress", progress: p.progress, loaded: p.loaded, total: p.total });
+            if (p.progress >= 100) { stage = "creating GPU sessions"; self.postMessage({ type: "info", text: "Preparing model on GPU… (can take a minute)" }); }
+          }
+        },
+      });
+      stage = "GPU warm-up";
+      // Warm-up so the first real request isn't slow (compiles GPU shaders)
+      self.postMessage({ type: "info", text: "Warming up GPU…" });
+      const warm = template([{ role: "user", content: [{ type: "text", text: "Hi" }] }]);
+      await model.generate({ ...(await M.call(processor, warm, null)), max_new_tokens: 1 });
+      self.postMessage({ type: "ready", dtype: typeof dtype === "string" ? dtype : "q4 decoder + q4f16" });
+    }
+
+    if (data.type === "generate") {
+      const { id, messages, image, maxTokens } = data;
+      const prompt = template(messages);
+      const img = image ? new RawImage(new Uint8ClampedArray(image.buffer), image.width, image.height, 4).rgb() : null;
+      const inputs = await M.call(processor, prompt, img);
+
+      const t0 = performance.now(); let tFirst = 0, nTok = 0;
+      const streamer = new TextStreamer(processor.tokenizer, {
+        skip_prompt: true, skip_special_tokens: true,
+        callback_function: (text) => { self.postMessage({ type: "token", id, text }); },
+        token_callback_function: () => { nTok++; if (!tFirst) tFirst = performance.now(); },
+      });
+      const out = await model.generate({ ...inputs, max_new_tokens: maxTokens, do_sample: false, repetition_penalty: 1.1, streamer });
+      const text = clean(processor.batch_decode(out.slice(null, [inputs.input_ids.dims.at(-1), null]), { skip_special_tokens: true })[0]);
+      const t1 = performance.now();
+      // Free GPU/CPU tensors from this request right away instead of waiting for GC.
+      for (const v of [...Object.values(inputs), out]) { try { v?.dispose?.(); } catch {} }
+      self.postMessage({ type: "done", id, text, stats: {
+        firstMs: Math.round((tFirst || t1) - t0),
+        tps: nTok > 1 && tFirst ? ((nTok - 1) / ((t1 - tFirst) / 1000)).toFixed(1) : "–",
+        totalMs: Math.round(t1 - t0),
+      }});
+    }
+  } catch (err) {
+    const msg = String(err && err.message || err);
+    self.postMessage({ type: "error", id: data.id, text: data.type === "load" ? `Failed while ${stage}: ${msg}` : msg });
+  }
+};
+</script>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  // ---------- storage helpers (never let storage errors break the app) ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  // ---------- language ----------
+  const I18N = {
+    en: {
+      loading: "Loading…", loaded: "Loaded", retry: "Retry", you: "You: ",
+      loadedInfo: "Loaded ({d}). Runs fully on this phone now.", gpuPrep: "Preparing model on GPU… (can take a minute)",
+      btnIdle: "Describe<small>tap · hold to ask</small>", btnLoad: "Load a model first",
+      btnCapturing: "Capturing…", btnListening: "Listening…<small>speak your question</small>",
+      btnAsking: "Type your question", btnThinking: "Thinking…",
+      camAuto: "Auto (USB camera if connected)",
+      emptyLog: "Nothing yet. Tap the button.",
+      recovered: "✓ Recovered from a crash (image detail now: {d}).",
+      perf: "first token {a} s · {b} tok/s · total {c} s",
+      espOn: "connected · button on", espOff: "not connected",
+      espHttps: "blocked – open this page via http://localhost",
+      espImgHint: "Changes apply right away and are saved on the camera (kept after it restarts).",
+      espImgErr: "Camera not reachable – join its Wi-Fi first.", espImgBusy: "Loading…",
+      espImgNo: "This camera doesn't support that setting.",
+      c_framesize: "Resolution", c_quality: "Quality", c_brightness: "Brightness", c_contrast: "Contrast",
+      c_saturation: "Saturation", c_aec: "Auto exposure", c_ae_level: "Exposure level", c_aec_value: "Manual exposure",
+      c_aec2: "Better in low light", c_agc: "Auto gain", c_gainceiling: "Max gain", c_agc_gain: "Manual gain",
+      c_awb: "Auto white balance", c_wb_mode: "White balance", c_special_effect: "Effect",
+      c_lenc: "Lens correction", c_vflip: "Flip vertically", c_hmirror: "Mirror", c_flash: "Flash LED on capture",
+      wb0: "Auto", wb1: "Sunny", wb2: "Cloudy", wb3: "Office (fluorescent)", wb4: "Home (warm bulb)",
+      fx0: "None", fx1: "Negative", fx2: "Grayscale", fx3: "Red tint", fx4: "Green tint", fx5: "Blue tint", fx6: "Sepia",
+    },
+    fa: {
+      hModel: "۱ · مدل", load: "بارگذاری", loading: "در حال بارگذاری…", loaded: "بارگذاری شد", retry: "تلاش دوباره",
+      precision: "دقت", devCheck: "بررسی دستگاه",
+      loadHint: "بار اول مدل از اینترنت دانلود می‌شود (از وای‌فای استفاده کنید) و در کروم ذخیره می‌شود. بعد از آن آفلاین کار می‌کند.",
+      loadedInfo: "مدل بارگذاری شد ({d}). همه‌چیز روی همین گوشی اجرا می‌شود.", gpuPrep: "آماده‌سازی مدل روی GPU… (ممکن است یک دقیقه طول بکشد)",
+      btnIdle: "توضیح بده<small>ضربه · برای پرسیدن نگه دارید</small>", btnLoad: "اول مدل را بارگذاری کنید",
+      btnCapturing: "در حال عکس گرفتن…", btnListening: "در حال شنیدن…<small>سؤالتان را بگویید</small>",
+      btnAsking: "سؤالتان را بنویسید", btnThinking: "در حال فکر کردن…",
+      askHint: "درباره‌ی همین عکس بپرسید. بگویید یا بنویسید:", qPh: "روی اون تابلو چی نوشته؟", send: "بفرست", cancel: "لغو",
+      hSettings: "تنظیمات", camera: "دوربین", camAuto: "خودکار (دوربین USB اگر وصل باشد)",
+      detail: "جزئیات تصویر", dLow: "کم · کمترین حافظه", dNormal: "معمولی", dHigh: "زیاد · خواندن متن ریز، احتمال کرش بیشتر",
+      speak: "خواندن توضیح‌ها و پاسخ‌ها با صدا", autoRecover: "بازیابی خودکار بعد از کرش کروم (Aw, Snap!)",
+      hSeen: "چیزهایی که دیدم", clear: "پاک کردن", you: "شما: ",
+      emptyLog: "هنوز چیزی نیست. دکمه را بزنید.",
+      "model not loaded": "مدل بارگذاری نشده", "loading…": "در حال بارگذاری…", ready: "آماده", "thinking…": "در حال فکر کردن…", error: "خطا",
+      recovered: "✓ بعد از کرش بازیابی شد (جزئیات تصویر: {d}).",
+      noFaVoice: "صدای فارسی روی این گوشی نصب نیست. در تنظیمات اندروید ← متن به گفتار، یک موتور با صدای فارسی نصب و انتخاب کنید.",
+      perf: "اولین کلمه {a} ث · {b} توکن/ث · کل {c} ث",
+      camEsp: "دوربین وای‌فای ESP32 (عینک)", espAddr: "آدرس دوربین وای‌فای",
+      espOn: "وصل · دکمه فعال", espOff: "وصل نیست",
+      espHttps: "مسدود – صفحه را با http://localhost باز کنید",
+      espImg: "تنظیمات تصویر دوربین وای‌فای", espPrevBtn: "عکس آزمایشی", espReset: "بازگشت به پیش‌فرض",
+      espImgHint: "تغییرها فوراً اعمال و روی خود دوربین ذخیره می‌شوند (بعد از خاموش و روشن شدن هم می‌مانند).",
+      espImgErr: "دوربین در دسترس نیست – اول به وای‌فای آن وصل شوید.", espImgBusy: "در حال بارگذاری…",
+      espImgNo: "این دوربین از این تنظیم پشتیبانی نمی‌کند.",
+      c_framesize: "اندازه تصویر", c_quality: "کیفیت", c_brightness: "روشنایی", c_contrast: "کنتراست",
+      c_saturation: "شدت رنگ", c_aec: "نوردهی خودکار", c_ae_level: "میزان نوردهی", c_aec_value: "نوردهی دستی",
+      c_aec2: "بهتر در نور کم", c_agc: "بهره (Gain) خودکار", c_gainceiling: "حداکثر بهره", c_agc_gain: "بهره دستی",
+      c_awb: "تراز سفیدی خودکار", c_wb_mode: "تراز سفیدی", c_special_effect: "افکت",
+      c_lenc: "اصلاح لنز", c_vflip: "وارونه (بالا و پایین)", c_hmirror: "آینه‌ای (چپ و راست)", c_flash: "روشن شدن فلش هنگام عکس",
+      wb0: "خودکار", wb1: "آفتابی", wb2: "ابری", wb3: "اداره (مهتابی)", wb4: "خانه (لامپ زرد)",
+      fx0: "بدون افکت", fx1: "نگاتیو", fx2: "سیاه و سفید", fx3: "ته‌رنگ قرمز", fx4: "ته‌رنگ سبز", fx5: "ته‌رنگ آبی", fx6: "قهوه‌ای قدیمی (سپیا)",
+    },
+  };
+  let lang = store.get("lang", "fa");
+  // Look up in the current language, then English, then fall back to the key itself.
+  const t = (k, vars) => {
+    let s = I18N[lang][k] ?? I18N.en[k] ?? k;
+    if (vars) for (const v in vars) s = s.replace("{" + v + "}", vars[v]);
+    return s;
+  };
+  const statusEl = $("status");
+  let statusKey = "model not loaded", statusCls = "";
+  const setStatus = (key, cls = "") => { statusKey = key; statusCls = cls; statusEl.textContent = t(key); statusEl.className = "pill " + cls; };
+  const enDefaults = new Map();   // original English text of static elements
+  function applyLang() {
+    document.documentElement.lang = lang; document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      if (!enDefaults.has(el)) enDefaults.set(el, el.textContent);
+      el.textContent = lang === "en" ? enDefaults.get(el) : t(el.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+      if (!el.dataset.enPh) el.dataset.enPh = el.placeholder;
+      el.placeholder = lang === "en" ? el.dataset.enPh : t(el.dataset.i18nPh);
+    });
+    setStatus(statusKey, statusCls);
+    if (!$("loadBtn").dataset.i18n) $("loadBtn").textContent = ready ? t("loaded") : ($("loadBtn").disabled ? t("loading") : t("retry"));
+    $("camSel").options[0].textContent = t("camAuto");
+    setEsp(esp.online);
+    buildCamCtl();
+    setPhase(phase);
+    renderLog();
+  }
+  $("langSel").value = lang;
+  $("langSel").onchange = () => { lang = $("langSel").value; store.set("lang", lang); applyLang(); };
+
+  // ---------- device check ----------
+  (async () => {
+    const lines = [];
+    lines.push(`Secure context (needed for camera): ${window.isSecureContext ? "yes" : "NO – open via https:// or http://localhost"}`);
+    let gpu = "no";
+    if ("gpu" in navigator) {
+      try {
+        const a = await navigator.gpu.requestAdapter();
+        if (a) {
+          const info = a.info || {};
+          gpu = `yes (${[info.vendor, info.architecture, info.description].filter(Boolean).join(" ") || "adapter found"})`;
+          lines.push(`shader-f16: ${a.features.has("shader-f16") ? "yes" : "no"}`);
+          lines.push(`maxBufferSize: ${(a.limits.maxBufferSize / 2**20).toFixed(0)} MB`);
+        } else gpu = "API present but no adapter – try chrome://flags/#enable-unsafe-webgpu";
+      } catch (e) { gpu = "error: " + e.message; }
+    }
+    lines.unshift(`WebGPU: ${gpu}`);
+    if (navigator.deviceMemory) lines.push(`Device memory (reported, capped at 8): ${navigator.deviceMemory} GB`);
+    try {
+      const est = await navigator.storage.estimate();
+      lines.push(`Storage: ${(est.usage/1e9).toFixed(2)} GB used of ~${(est.quota/1e9).toFixed(0)} GB quota`);
+      if (navigator.storage.persist) lines.push(`Persistent storage: ${await navigator.storage.persist() ? "granted" : "not granted"}`);
+    } catch {}
+    lines.push(`Speech recognition: ${("webkitSpeechRecognition" in window || "SpeechRecognition" in window) ? "yes" : "no"}`);
+    try {
+      const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput");
+      lines.push(`Cameras: ${cams.length}${cams.some(c => c.label) ? " – " + cams.map(c => c.label).join(" | ") : " (names appear after first capture)"}`);
+    } catch {}
+    $("diag").textContent = lines.join("\n");
+    if (!("gpu" in navigator)) $("loadInfo").textContent = "⚠ WebGPU not available. Use the latest Chrome for Android.";
+  })();
+
+  // ---------- worker ----------
+  const blob = new Blob([$("workerSrc").textContent], { type: "text/javascript" });
+  const worker = new Worker(URL.createObjectURL(blob), { type: "module" });
+  let ready = false, jobId = 0;
+  const pending = new Map();   // id -> {onToken, resolve, reject}
+
+  worker.onmessage = ({ data }) => {
+    switch (data.type) {
+      case "progress": {
+        delete $("loadInfo").dataset.i18n; $("bar").style.display = "block";
+        $("bar").firstElementChild.style.width = data.progress.toFixed(1) + "%";
+        $("loadInfo").textContent = `Downloading… ${(data.loaded/1e9).toFixed(2)} / ${(data.total/1e9).toFixed(2)} GB (${data.progress.toFixed(0)}%)`;
+        break;
+      }
+      case "info": delete $("loadInfo").dataset.i18n; $("loadInfo").textContent = data.text.startsWith("Preparing model") ? t("gpuPrep") : data.text; break;
+      case "ready":
+        ready = true; setStatus("ready", "ok");
+        $("bar").style.display = "none";
+        $("loadInfo").textContent = t("loadedInfo", { d: data.dtype });
+        $("loadBtn").textContent = t("loaded"); setPhase("idle");
+        if (recovering) { recovering = false; $("perf").textContent = t("recovered", { d: $("detailSel").selectedOptions[0].text.split(" ·")[0] }); }
+        break;
+      case "token": pending.get(data.id)?.onToken?.(data.text); break;
+      case "done": { const p = pending.get(data.id); pending.delete(data.id); p?.resolve(data); break; }
+      case "error": {
+        if (data.id != null && pending.has(data.id)) { const p = pending.get(data.id); pending.delete(data.id); p.reject(new Error(data.text)); }
+        else {
+          setStatus("error", "err"); delete $("loadInfo").dataset.i18n; $("loadInfo").textContent = "⚠ " + data.text;
+          $("loadBtn").disabled = false; $("loadBtn").textContent = t("retry");
+        }
+      }
+    }
+  };
+  worker.onerror = (e) => { setStatus("error", "err"); $("loadInfo").textContent = "⚠ Worker crashed: " + (e.message || "probably out of memory – try a smaller model"); };
+
+  function run(messages, image, maxTokens, onToken) {
+    const id = ++jobId; setStatus("thinking…", "busy");
+    return new Promise((resolve, reject) => {
+      pending.set(id, { onToken, resolve, reject });
+      const msg = { type: "generate", id, messages, maxTokens, image: image && { buffer: image.data.buffer, width: image.width, height: image.height } };
+      worker.postMessage(msg, image ? [image.data.buffer] : []);
+    }).finally(() => setStatus("ready", "ok"));
+  }
+
+  $("loadBtn").onclick = () => {
+    $("loadBtn").disabled = true; delete $("loadBtn").dataset.i18n; delete $("loadInfo").dataset.i18n;
+    $("loadBtn").textContent = t("loading"); $("modelSel").disabled = true;
+    setStatus("loading…", "busy");
+    store.set("modelKey", $("modelSel").value);
+    store.set("dtype", $("dtypeSel").value);
+    $("dtypeSel").disabled = true;
+    saveSession({ loaded: true });
+    worker.postMessage({ type: "load", modelKey: $("modelSel").value, dtype: $("dtypeSel").value, localPath: new URL("models/", location.href).href });
+  };
+  $("modelSel").value = store.get("modelKey", $("modelSel").value);
+  if (!$("modelSel").value) $("modelSel").selectedIndex = 0;
+  $("dtypeSel").value = store.get("dtype", "auto");
+  $("detailSel").value = store.get("detail", "448");
+  $("detailSel").onchange = () => store.set("detail", $("detailSel").value);
+  $("autoRecover").checked = store.get("autoRecover", true);
+  $("autoRecover").onchange = () => store.set("autoRecover", $("autoRecover").checked);
+  $("speak").checked = store.get("speak", true);
+  $("speak").onchange = () => store.set("speak", $("speak").checked);
+
+  // ---------- crash recovery ----------
+  // "Aw, Snap!" kills the page without any unload event. We keep an "alive" flag in storage while
+  // the page runs and clear it on a normal close (pagehide). If the flag is still set when the page
+  // opens, the last session crashed: reload the model and drop image detail one step.
+  let session = store.get("session", {});
+  function saveSession(patch) { session = { ...session, ...patch, alive: true }; store.set("session", session); }
+  window.addEventListener("pagehide", () => store.set("session", { ...session, alive: false }));
+  let recovering = false;
+  if (session.alive && session.loaded && $("autoRecover").checked) {
+    const now = Date.now();
+    const recent = (session.crashTimes || []).filter(t => now - t < 5 * 60e3).concat(now);
+    session.crashTimes = recent;
+    if (recent.length > 3) {
+      setTimeout(() => alertInline("Crashed 4 times in 5 minutes – auto-recover paused. Try Low image detail or close other apps, then press Load."));
+      session = { crashTimes: recent }; store.set("session", session);
+    } else {
+      recovering = true;
+      const d = $("detailSel");
+      if (d.selectedIndex > 0) { d.selectedIndex--; store.set("detail", d.value); }
+      setTimeout(() => { $("loadInfo").textContent = "Recovering after a crash…"; $("loadBtn").click(); }, 300);
+    }
+  } else {
+    session = {}; store.set("session", session);
+  }
+
+  // ---------- camera: no live preview. Opened for a moment to grab one frame, then closed. ----------
+  const video = $("video");
+  let camId = store.get("camId", "auto");
+  async function listCams() {
+    try {
+      const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput");
+      const sel = $("camSel");
+      sel.length = 2;   // keep "Auto" and "ESP32 Wi-Fi camera"
+      devs.forEach((d, i) => { if (d.deviceId) sel.append(new Option(d.label || `Camera ${i + 1}`, d.deviceId)); });
+      sel.value = [...sel.options].some(o => o.value === camId) ? camId : "auto";
+      return devs;
+    } catch { return []; }
+  }
+  $("camSel").onchange = () => { camId = $("camSel").value; store.set("camId", camId); showCamImg(); };
+  navigator.mediaDevices?.addEventListener?.("devicechange", listCams);
+  listCams();
+
+  async function openStream() {
+    const devs = await listCams();
+    // Auto: a USB (UVC) camera shows up as "external"/"usb" in its label on Android; otherwise use the back camera.
+    const ext = devs.find(d => d.deviceId && /usb|external|uvc/i.test(d.label));
+    const which = camId !== "auto" ? { deviceId: { exact: camId } }
+                : ext ? { deviceId: { exact: ext.deviceId } } : { facingMode: "environment" };
+    const size = { width: { ideal: 640 }, height: { ideal: 480 } };
+    try { return await navigator.mediaDevices.getUserMedia({ video: { ...which, ...size }, audio: false }); }
+    catch (e) {
+      if (!which.deviceId) throw e;   // chosen camera unplugged → fall back to the phone's back camera
+      return navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", ...size }, audio: false });
+    }
+  }
+
+  // ---------- ESP32-CAM on the glasses (Wi-Fi): frames over HTTP, button presses by long-polling ----------
+  // Firmware: firmware/openvision_cam. The camera makes its own Wi-Fi "OpenVision-Cam" at 192.168.4.1.
+  // Chrome blocks http:// requests from an https:// page, so open this page via http://localhost.
+  const esp = { online: false, last: -1, boot: null };
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  $("espAddr").value = store.get("espAddr", "192.168.4.1");
+  $("espAddr").onchange = () => { store.set("espAddr", $("espAddr").value.trim()); esp.last = -1; esp.boot = null; };
+  const espHost = () => ($("espAddr").value.trim() || "192.168.4.1").replace(/^https?:\/\//, "").replace(/[:/].*$/, "");
+  const espUrl = (path, port) => `http://${espHost()}${port ? ":" + port : ""}${path}`;
+  const espFetch = (url, ms) => fetch(url, { cache: "no-store", signal: AbortSignal.timeout(ms), targetAddressSpace: "local" });
+  const useEsp = () => camId === "esp" || (camId === "auto" && esp.online);
+  // In Auto mode only look for the glasses camera once it has been used, so Chrome doesn't ask for
+  // local-network access on phones that never use one.
+  const espWanted = () => camId === "esp" || (camId === "auto" && store.get("espSeen", false));
+  function setEsp(on, msg) {
+    esp.online = on;
+    const el = $("espState");
+    el.textContent = on ? t("espOn") : (msg || (espWanted() ? t("espOff") : "–"));
+    el.className = "pill " + (on ? "ok" : (msg ? "err" : ""));
+    showCamImg();
+  }
+  async function espLoop() {
+    for (;;) {
+      if (!espWanted()) { if (esp.online) setEsp(false); await sleep(2000); continue; }
+      try {
+        const r = await espFetch(espUrl(`/events?after=${esp.last}`, 81), 15000);
+        const j = await r.json();
+        if (j.boot !== esp.boot) { esp.boot = j.boot; esp.last = j.last; }   // first contact / camera restarted: no replay
+        else {
+          for (const e of j.events) if (e.age < 2000) hwEvent(e.type);       // ignore presses that arrive very late
+          esp.last = j.last;
+        }
+        if (!esp.online) { setEsp(true); store.set("espSeen", true); }
+      } catch (e) {
+        const blocked = location.protocol === "https:" && !/^(localhost|127\.)/.test(location.hostname);
+        setEsp(false, blocked && camId === "esp" ? t("espHttps") : "");
+        await sleep(camId === "esp" ? 1500 : 5000);
+      }
+    }
+  }
+  // Glasses button. The camera times the long press itself ("long" at 450 ms), so Wi-Fi delay
+  // can't turn a tap into a hold. down → tap = describe; down → long = ask.
+  function hwEvent(type) {
+    if (type === "down") {
+      if (phase === "listening" && recog) { try { recog.stop(); } catch {} return; }   // press again = done speaking
+      if (phase === "asking") { if (SR) startMic(); return; }                         // press again = try speaking again
+      pressStart(true);
+    } else if (type === "long") fireLong();
+    else pressEnd();   // "tap" or "up"
+  }
+  async function espSnapshot(held) {
+    let r = null;
+    if (held) { try { r = await espFetch(espUrl("/held"), 4000); } catch {} }   // frame grabbed at the press
+    if (!r?.ok) r = await espFetch(espUrl("/capture"), 5000);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const bmp = await createImageBitmap(await r.blob());
+    const img = drawScaled(bmp, bmp.width, bmp.height, frameSide());
+    bmp.close?.();
+    return img;
+  }
+
+  // ---------- Wi-Fi camera image settings (firmware: /settings reads them, /control changes one) ----------
+  // The camera applies each change at once and saves it in its flash, so it's kept after a restart.
+  // "on" = when the control is usable (e.g. manual exposure only while auto exposure is off).
+  const CAM_CTL = [
+    { k: "framesize", type: "select", opts: [[6, "320×240"], [8, "400×296"], [9, "480×320"], [10, "640×480"]] },
+    { k: "quality", type: "range", min: 0, max: 100, step: 5 },
+    { k: "brightness", type: "range", min: -2, max: 2 },
+    { k: "contrast", type: "range", min: -2, max: 2 },
+    { k: "saturation", type: "range", min: -2, max: 2 },
+    { k: "aec", type: "check" },
+    { k: "ae_level", type: "range", min: -2, max: 2, on: (v) => v.aec },
+    { k: "aec_value", type: "range", min: 0, max: 1200, step: 10, on: (v) => !v.aec },
+    { k: "aec2", type: "check", on: (v) => v.aec },
+    { k: "agc", type: "check" },
+    { k: "gainceiling", type: "range", min: 0, max: 6, on: (v) => v.agc, fmt: (x) => 2 ** (x + 1) + "×" },
+    { k: "agc_gain", type: "range", min: 0, max: 30, on: (v) => !v.agc },
+    { k: "awb", type: "check" },
+    { k: "wb_mode", type: "select", i18n: true, opts: [0, 1, 2, 3, 4].map(i => [i, "wb" + i]), on: (v) => v.awb },
+    { k: "special_effect", type: "select", i18n: true, opts: [0, 1, 2, 3, 4, 5, 6].map(i => [i, "fx" + i]) },
+    { k: "lenc", type: "check" },
+    { k: "vflip", type: "check" },
+    { k: "hmirror", type: "check" },
+    { k: "flash", type: "check" },
+  ];
+  let camVals = null;   // values last read from the camera (null = not loaded)
+  const camEls = {};
+  const fmtCam = (c, x) => c.fmt ? c.fmt(x) : (c.min < 0 && x > 0 ? "+" + x : String(x));
+  function showCamImg() { $("espImg").classList.toggle("hidden", !(camId === "esp" || esp.online)); }
+
+  function buildCamCtl() {   // (re)built on language change
+    const box = $("espCtl"); box.innerHTML = "";
+    for (const c of CAM_CTL) {
+      const lab = document.createElement("label"); lab.textContent = t("c_" + c.k); lab.htmlFor = "cc_" + c.k;
+      let inp, val = null;
+      if (c.type === "select") {
+        inp = document.createElement("select"); inp.className = "wide";
+        for (const [v, txt] of c.opts) inp.append(new Option(c.i18n ? t(txt) : txt, v));
+        inp.onchange = () => setCam(c.k, +inp.value);
+      } else if (c.type === "check") {
+        inp = document.createElement("input"); inp.type = "checkbox"; inp.className = "wide";
+        inp.onchange = () => setCam(c.k, inp.checked ? 1 : 0);
+      } else {
+        inp = document.createElement("input"); inp.type = "range";
+        inp.min = c.min; inp.max = c.max; inp.step = c.step || 1;
+        val = document.createElement("span"); val.className = "val";
+        inp.oninput = () => { val.textContent = fmtCam(c, +inp.value); };
+        inp.onchange = () => setCam(c.k, +inp.value);   // sent when the finger is lifted
+      }
+      inp.id = "cc_" + c.k;
+      box.append(lab, inp); if (val) box.append(val);
+      camEls[c.k] = { lab, inp, val };
+    }
+    renderCamCtl();
+  }
+
+  function renderCamCtl() {
+    for (const c of CAM_CTL) {
+      const e = camEls[c.k]; if (!e) continue;
+      const v = camVals?.[c.k];
+      if (c.k === "framesize" && camVals) for (const o of e.inp.options) o.disabled = +o.value > camVals.maxsize;
+      if (v != null) { if (c.type === "check") e.inp.checked = !!v; else e.inp.value = v; }
+      if (e.val) e.val.textContent = v != null ? fmtCam(c, v) : "";
+      const on = !!camVals && (!c.on || c.on(camVals));
+      e.inp.disabled = !on;
+      [e.lab, e.inp, e.val].forEach(x => x?.classList.toggle("dim", !on));
+    }
+  }
+
+  async function loadCamSettings() {
+    $("espImgMsg").textContent = t("espImgBusy");
+    try {
+      const r = await espFetch(espUrl("/settings"), 5000);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      camVals = await r.json();
+      $("espImgMsg").textContent = t("espImgHint");
+      renderCamCtl();
+      camPreview();
+    } catch { camVals = null; renderCamCtl(); $("espImgMsg").textContent = t("espImgErr"); }
+  }
+
+  async function setCam(k, v) {
+    if (!camVals) return;
+    const old = camVals[k];
+    camVals[k] = v; renderCamCtl();
+    try {
+      const r = await espFetch(espUrl(`/control?var=${encodeURIComponent(k)}&val=${v}`), 5000);
+      if (!r.ok) { camVals[k] = old; renderCamCtl(); $("espImgMsg").textContent = t("espImgNo"); return; }
+      $("espImgMsg").textContent = t("espImgHint");
+      schedulePreview();
+    } catch { camVals[k] = old; renderCamCtl(); $("espImgMsg").textContent = t("espImgErr"); }
+  }
+
+  let prevTimer = null, prevUrl = null;
+  function schedulePreview() { clearTimeout(prevTimer); prevTimer = setTimeout(camPreview, 500); }   // let the sensor settle
+  async function camPreview() {
+    if (phase === "capturing" || phase === "thinking") return;   // don't compete with the AI for the camera / memory
+    try {
+      const r = await espFetch(espUrl("/capture"), 6000);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const url = URL.createObjectURL(await r.blob());
+      if (prevUrl) URL.revokeObjectURL(prevUrl);
+      prevUrl = url; $("espPrev").src = url; $("espPrev").classList.add("show");
+    } catch { $("espImgMsg").textContent = t("espImgErr"); }
+  }
+
+  $("espImg").addEventListener("toggle", () => { if ($("espImg").open) loadCamSettings(); });
+  $("espPrevBtn").onclick = () => camVals ? camPreview() : loadCamSettings();
+  $("espResetBtn").onclick = async () => {
+    try {
+      const r = await espFetch(espUrl("/control?var=reset"), 5000);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      await loadCamSettings();
+    } catch { $("espImgMsg").textContent = t("espImgErr"); }
+  };
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  // Qwen: image tokens ≈ (w/32)*(h/32) and vision-encoder memory grows faster than that, so image
+  // detail is the main memory knob. Gemma resizes to a fixed budget anyway, so give it 768.
+  const frameSide = () => $("modelSel").value.startsWith("gemma") ? 768 : +$("detailSel").value;
+  function drawScaled(src, w, h, side) {
+    const s = Math.min(1, side / Math.max(w, h));
+    canvas.width = Math.round(w * s); canvas.height = Math.round(h * s);
+    ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+  async function shrink(img, side) {
+    if (!img || Math.max(img.width, img.height) <= side) return img;
+    return drawScaled(await createImageBitmap(img), img.width, img.height, side);
+  }
+  function showThumb(img) {
+    const th = $("thumb"); th.width = img.width; th.height = img.height;
+    th.getContext("2d").putImageData(img, 0, 0); th.classList.add("show");
+  }
+
+  async function snapshot(hw = false) {
+    if (hw || useEsp()) {
+      try { const img = await espSnapshot(hw); showThumb(img); return img; }
+      catch (e) {
+        if (camId === "esp") { alertInline("Wi-Fi camera: " + e.message); return null; }
+        // Auto: fall back to the USB / phone camera below
+      }
+    }
+    let stream = null;
+    try {
+      stream = await openStream();
+      video.srcObject = stream; await video.play();
+      if (!video.videoWidth) await new Promise(r => video.addEventListener("loadeddata", r, { once: true }));
+      await new Promise(r => setTimeout(r, 600));   // let auto-exposure / white balance settle (USB cams need it)
+      const img = drawScaled(video, video.videoWidth, video.videoHeight, frameSide());
+      showThumb(img);
+      return img;
+    } catch (e) {
+      alertInline("Camera error: " + e.message + (window.isSecureContext ? "" : " (page must be opened via https or localhost)"));
+      return null;
+    } finally {
+      stream?.getTracks().forEach(tr => tr.stop()); video.srcObject = null;
+      listCams();   // camera names become visible after the first permission grant
+    }
+  }
+
+  // ---------- observation memory ----------
+  let log = store.get("log", []);   // [{t, text}]
+  const MAX_LOG = 40;
+  // fmtTime: for the model's prompt (always Latin digits). showTime: for display, in the UI language.
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const showTime = (ts) => new Date(ts).toLocaleTimeString(lang === "fa" ? "fa-IR" : [], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  function renderLog() {
+    $("log").innerHTML = "";
+    if (!log.length) { const li = document.createElement("li"); li.className = "small"; li.textContent = t("emptyLog"); $("log").append(li); return; }
+    for (const e of [...log].reverse()) {
+      const li = document.createElement("li"); li.dir = "auto";
+      const tm = document.createElement("time"); tm.textContent = showTime(e.t);
+      li.append(tm, document.createTextNode(e.text)); $("log").append(li);
+    }
+  }
+  function addLog(text) { log.push({ t: Date.now(), text }); if (log.length > MAX_LOG) log = log.slice(-MAX_LOG); store.set("log", log); renderLog(); }
+  let history = [];   // last Q/A pair, for follow-up questions
+  $("clearBtn").onclick = () => { log = []; history = []; store.set("log", log); renderLog(); };
+
+  // ---------- the one button ----------
+  // Tap  → capture a frame, describe it, read it aloud.
+  // Hold → the frame is captured at the START of the press; then the mic opens (and a text box
+  //        appears as a fallback) to ask a question about that frame.
+  // Space / Enter (e.g. a Bluetooth keyboard-mode button) behave the same as the on-screen button.
+  const LONG_MS = 450;
+  let phase = "load";            // load | idle | capturing | listening | asking | thinking
+  let pressing = false, longFired = false, pressTimer = null, frameP = null;
+  const btn = $("bigBtn");
+  function setPhase(p) {
+    phase = p;
+    if (p === "load" && ready) phase = p = "idle";
+    btn.className = p;
+    btn.innerHTML = t({ load: "btnLoad", idle: "btnIdle", capturing: "btnCapturing", listening: "btnListening", asking: "btnAsking", thinking: "btnThinking" }[p]);
+    btn.disabled = !ready || p === "thinking" || p === "asking" || p === "listening";
+    if (p === "idle" || p === "thinking") $("askPanel").classList.add("hidden");
+  }
+
+  // hw = the button on the glasses (ESP32-CAM): it sends "long" itself, so no local timer, only a
+  // safety timeout in case the release event gets lost.
+  function pressStart(hw = false) {
+    if (!ready || phase !== "idle" || pressing) return;
+    pressing = true; longFired = false; btn.classList.add("held");
+    speechSynthesis.cancel(); stopMic();
+    setPhase("capturing"); btn.classList.add("held");
+    frameP = snapshot(hw);                                // frame from the moment of the press
+    pressTimer = hw ? setTimeout(() => { if (pressing) pressEnd(); }, 4000) : setTimeout(fireLong, LONG_MS);
+  }
+  // Long press: the release no longer matters (the button gets disabled, so pointerup may never arrive).
+  function fireLong() {
+    if (!pressing) return;
+    clearTimeout(pressTimer);
+    longFired = true; pressing = false; btn.classList.remove("held"); openAsk();
+  }
+  function pressEnd() {
+    if (!pressing) return;
+    pressing = false; btn.classList.remove("held"); clearTimeout(pressTimer);
+    if (!longFired) describe();
+  }
+  btn.addEventListener("pointerdown", (e) => { btn.setPointerCapture?.(e.pointerId); pressStart(); });
+  btn.addEventListener("pointerup", pressEnd);
+  btn.addEventListener("pointercancel", pressEnd);
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+  btn.addEventListener("click", (e) => e.preventDefault());
+  const isPressKey = (e) => e.code === "Space" || e.key === "Enter" || e.key === "AudioVolumeUp" || e.key === "MediaPlayPause";
+  const keyTargetOk = () => !document.activeElement || document.activeElement === document.body || document.activeElement === btn;
+  document.addEventListener("keydown", (e) => { if (isPressKey(e) && keyTargetOk()) { e.preventDefault(); if (!e.repeat) pressStart(); } });
+  document.addEventListener("keyup", (e) => { if (isPressKey(e) && keyTargetOk()) { e.preventDefault(); pressEnd(); } });
+
+  const OBSERVE_PROMPT =
+    "You are the eyes of a wearable assistant. In one or two short sentences, describe what is in front of the user right now: " +
+    "main objects, people and what they are doing, any readable text (quote it), and anything unsafe. No preamble.";
+
+  async function describe() {
+    const img = await frameP; frameP = null;
+    if (!img) return setPhase("idle");
+    setPhase("thinking");
+    const out = $("answer"); out.textContent = "";
+    try {
+      const fa = lang === "fa";   // in Persian mode, describe in Persian so it can be read aloud
+      const msgs = [{ role: "user", content: [{ type: "image" }, { type: "text", text: OBSERVE_PROMPT }] }];
+      if (fa) msgs.unshift({ role: "system", content: "Always reply in Persian (Farsi), using natural, simple Persian." });
+      const r = await run(msgs, img, fa ? 110 : 70, (tok) => { out.textContent += tok; });
+      out.textContent = r.text;
+      if (r.text) { addLog(r.text); if ($("speak").checked) speak(r.text); }
+      showPerf(r.stats);
+    } catch (e) { out.textContent = "⚠ " + e.message; }
+    setPhase("idle");
+  }
+
+  // --- ask (after a long press) ---
+  function openAsk() {
+    $("q").value = ""; $("askPanel").classList.remove("hidden");
+    if (SR) startMic(); else setPhase("asking");
+  }
+  function cancelAsk() { stopMic(); frameP = null; setPhase("idle"); }
+  $("cancelBtn").onclick = cancelAsk;
+  $("sendBtn").onclick = () => sendAsk($("q").value);
+  $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") sendAsk($("q").value); });
+  $("q").addEventListener("focus", () => { if (phase === "listening") { stopMic(); setPhase("asking"); } });   // typing instead of speaking
+
+  function systemPrompt() {
+    // Only the last few observations: Persian text costs 2–3× more tokens, and every token is KV-cache memory.
+    const seen = log.slice(-4).map(e => `[${fmtTime(e.t)}] ${e.text}`).join("\n") || "(nothing observed yet)";
+    return "You are OpenVision, a helpful assistant built into the user's glasses. You see through their camera. " +
+      "The attached image is what the user is looking at right now. Below is a timestamped log of what the camera saw earlier. " +
+      "Answer briefly and directly (it will be read aloud). If you are not sure, say so. " +
+      (lang === "fa" ? "Always reply in Persian (Farsi), using natural, simple Persian.\n\n"
+                     : "Reply in the language the user asks in.\n\n") +
+      `Current time: ${fmtTime(Date.now())}\nObservation log:\n${seen}`;
+  }
+
+  async function sendAsk(text) {
+    const q = (text || "").trim();
+    if (!q || (phase !== "asking" && phase !== "listening")) return;
+    stopMic(); setPhase("thinking");
+    const img = await shrink(await frameP, 384); frameP = null;   // smaller frame for questions: the text prompt also takes memory
+    const messages = [{ role: "system", content: systemPrompt() }];   // Gemma 4 template expects a plain string here
+    for (const h of history.slice(-1)) {
+      messages.push({ role: "user", content: [{ type: "text", text: h.q }] }, { role: "assistant", content: [{ type: "text", text: h.a }] });
+    }
+    messages.push({ role: "user", content: [...(img ? [{ type: "image" }] : []), { type: "text", text: q }] });
+
+    const out = $("answer"); out.textContent = "";
+    const qLine = document.createElement("div"); qLine.className = "small"; qLine.textContent = t("you") + q; qLine.dir = "auto";
+    const aLine = document.createElement("div"); aLine.dir = "auto"; out.append(qLine, aLine);
+    try {
+      const r = await run(messages, img, lang === "fa" ? 200 : 150, (tok) => { aLine.textContent += tok; });
+      aLine.textContent = r.text;
+      history = [{ q, a: r.text }];
+      showPerf(r.stats);
+      if ($("speak").checked && r.text) speak(r.text);
+    } catch (e) { aLine.textContent = "⚠ " + e.message; }
+    setPhase("idle");
+  }
+
+  // ---------- voice in / out ----------
+  let warnedVoice = false;
+  const recogLang = () => lang === "fa" ? "fa-IR" : (navigator.language || "en-US");
+  function speak(text) {
+    try {
+      const u = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ""));
+      u.lang = recogLang();
+      const want = lang === "fa" ? "fa" : (navigator.language || "en").slice(0, 2);
+      const voice = speechSynthesis.getVoices().find(v => v.lang.toLowerCase().replace("_", "-").startsWith(want));
+      if (voice) u.voice = voice;
+      else if (lang === "fa" && !warnedVoice) { warnedVoice = true; alertInline(t("noFaVoice")); }
+      speechSynthesis.speak(u);
+    } catch {}
+  }
+  try { speechSynthesis.getVoices(); } catch {}   // voices load lazily on Android; ask early
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recog = null;
+  function startMic() {
+    setPhase("listening");
+    recog = new SR(); recog.lang = recogLang(); recog.interimResults = true; recog.maxAlternatives = 1;
+    let finalText = "";
+    recog.onresult = (e) => {
+      const r = e.results[e.results.length - 1];
+      $("q").value = r[0].transcript;
+      if (r.isFinal) finalText = r[0].transcript;
+    };
+    recog.onerror = (e) => { if (e.error !== "aborted" && e.error !== "no-speech") alertInline("Mic: " + e.error + (e.error === "network" ? " (install the offline speech pack in Android settings)" : "")); };
+    recog.onend = () => {
+      recog = null;
+      if (phase !== "listening") return;
+      if (finalText.trim()) sendAsk(finalText);
+      else setPhase("asking");   // nothing heard → leave the text box open
+    };
+    try { recog.start(); } catch { recog = null; setPhase("asking"); }
+  }
+  function stopMic() { if (recog) { const r = recog; recog = null; try { r.abort(); } catch {} } }
+
+  // ---------- ui helpers ----------
+  function showPerf(s) { if (s) $("perf").textContent = t("perf", { a: (s.firstMs/1000).toFixed(1), b: s.tps, c: (s.totalMs/1000).toFixed(1) }); }
+  function alertInline(msg) { $("perf").textContent = "⚠ " + msg; }
+  applyLang();
+  espLoop();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+models/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+__pycache__/
+.DS_Store
+Thumbs.db
