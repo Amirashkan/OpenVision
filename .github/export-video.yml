@@ -1,0 +1,20 @@
+
+name: Export OpenVision Video
+
+on:
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Package video and TTS files
+        uses: actions/upload-artifact@v4
+        with:
+          name: openvision-edit-assets
+          path: temp/
+          if-no-files-found: error
+          retention-days: 1
