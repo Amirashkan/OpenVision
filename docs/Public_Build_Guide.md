@@ -14,7 +14,11 @@ The system has three parts:
 
 The camera does not stream continuous video in the current prototype. It captures a still frame on request. Image inference is performed on the phone; camera frames are not intentionally sent to a cloud inference service.
 
-## 2. Project status and compatibility
+## 2. System diagram
+
+![OpenVision system overview](images/system-overview.svg)
+
+## 3. Project status and compatibility
 
 - The current software target is Chrome for Android on a phone with working WebGPU support. The original development target was a Samsung Galaxy S24 FE; other devices may behave differently.
 - The browser downloads the selected model the first time it is loaded. Later offline use depends on the model cache, browser storage, and availability of the page and its JavaScript dependencies.
@@ -22,7 +26,7 @@ The camera does not stream continuous video in the current prototype. It capture
 - The ESP32-CAM design and firmware are experimental. Verify each hardware stage on a bench before attaching it to glasses.
 - This project has not been validated as an accessibility, medical, navigation, or personal-safety device.
 
-## 3. Repository files
+## 4. Repository files
 
 | Path | Purpose |
 |---|---|
@@ -37,7 +41,10 @@ The camera does not stream continuous video in the current prototype. It capture
 
 Model weights are not included in this repository. Review each model's own licence and terms before use.
 
-## 4. Hardware approach
+## 5. Hardware approach
+
+![ESP32-CAM wiring reference](images/esp32cam-wiring.svg)
+
 
 The repository contains an ESP32-CAM implementation with a local Wi-Fi access point and a physical button. The camera is mounted to one temple of ordinary glasses; a cable connects it to the phone through USB-C OTG. The phone runs the application and the AI model.
 
@@ -67,7 +74,7 @@ The camera board is powered through its 5V and GND input. The reference build no
 
 **Power and mounting caution:** the phone's USB port may not safely power every camera board/cable combination. Check current draw, connector temperature, voltage stability, and strain relief. Do not wear a prototype that becomes hot, has exposed conductors, or can snag on clothing.
 
-## 5. Firmware setup
+## 6. Firmware setup
 
 1. Install the Arduino IDE and the Espressif ESP32 board package.
 2. Open `firmware/openvision_cam/openvision_cam.ino`.
@@ -79,7 +86,12 @@ The camera board is powered through its 5V and GND input. The reference build no
 
 Do not expose the camera access point or OTA service to an untrusted network. The reference design is intended for a nearby, local connection.
 
-## 6. Fabricate and mount the enclosure
+## 7. Fabricate and mount the enclosure
+
+![Enclosure component layout](images/enclosure-layout.svg)
+
+![Glasses mount cross-section](images/glasses-mount.svg)
+
 
 1. Open `hardware/glasses_cam_mount.scad` in OpenSCAD.
 2. Select the camera/enclosure parameters matching your hardware and measure the glasses temple.
@@ -91,7 +103,7 @@ Do not expose the camera access point or OTA service to an untrusted network. Th
 
 The repository also contains a laser-cut alternative under `hardware/laser/`. Confirm material thickness and dimensions before ordering or cutting.
 
-## 7. Set up the phone
+## 8. Set up the phone
 
 1. Use a recent Chrome for Android version on a device with WebGPU support.
 2. Serve the project from `http://localhost` on the phone or from a secure HTTPS origin. For the reference ESP32-CAM connection, the local application is served from localhost because the camera exposes a local HTTP endpoint.
@@ -109,7 +121,7 @@ python -m http.server 8080
 
 Then open `http://localhost:8080/index.html` on the same phone. On Android, a terminal environment such as Termux can run the server.
 
-## 8. Interaction
+## 9. Interaction
 
 The reference interaction is:
 
@@ -119,7 +131,7 @@ The reference interaction is:
 
 The exact timing and behaviour are controlled by the application and firmware versions in the repository.
 
-## 9. Testing and limitations
+## 10. Testing and limitations
 
 Test the system in stages:
 
@@ -134,11 +146,11 @@ Known limitations include variable WebGPU support, phone memory limits, model la
 
 **Do not rely on OpenVision to cross streets, navigate hazards, identify people, read critical warnings, or make medical or safety decisions.** AI descriptions can be incomplete or incorrect. Keep ordinary situational awareness and other assistive tools in use.
 
-## 10. Privacy
+## 11. Privacy
 
 The intended design performs image inference locally on the phone. However, network behaviour also depends on the browser, the hosting origin, model download source, and any third-party libraries. Review the application and its dependencies before using it with sensitive images. The ESP32-CAM's local Wi-Fi network should use a unique password and should not be shared with untrusted users.
 
-## 11. Licences
+## 12. Licences
 
 - Software and firmware: Apache License 2.0, unless a file states otherwise.
 - Original hardware design files: CERN Open Hardware Licence Version 2 — Permissive (CERN-OHL-P-2.0).
