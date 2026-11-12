@@ -1,12 +1,12 @@
 # OpenVision — Public Build Guide
 
-OpenVision is an experimental, phone-based vision assistant. A small camera mounted to ordinary glasses captures a still image; a vision-language model running in the phone's browser describes the image or answers a spoken question about it. The phone can read the response aloud in Persian or English.
+OpenVision is an experimental, phone-based vision assistant. In the current working hardware prototype, a separate ESP32-CAM captures a still image and communicates with the phone over its Wi-Fi access point. A vision-language model running in the phone's browser describes the image or answers a spoken question about it. The camera is not yet mounted on the glasses frame. The phone can read the response aloud in Persian or English.
 
-This guide documents the current ESP32-CAM prototype. It is a hobbyist prototype, not a finished or safety-certified product.
+This guide documents the current working ESP32-CAM + phone prototype. The camera module is external and is not yet mounted on glasses. The repository's glasses-mount design files are intended for future integration and are not evidence of a completed wearable assembly. This is a hobbyist prototype, not a finished or safety-certified product.
 
 ## 1. System overview
 
-1. **Camera and button:** an ESP32-CAM captures a JPEG still image. A physical button sends short-press or long-press events.
+1. **Camera:** the separate ESP32-CAM module captures a JPEG still image and communicates with the phone over its local Wi-Fi access point. The camera is currently external rather than mounted on the glasses.
 2. **Phone application:** `index.html` runs in Chrome for Android and communicates with the camera over its local Wi-Fi network.
 3. **On-device AI:** a vision-language model runs in the browser through Transformers.js and WebGPU. The phone generates a description or answer and can speak it using Android text-to-speech.
 
@@ -43,7 +43,7 @@ Model weights are not included. Review each model's licence and terms before use
 
 The camera board is powered by a cable from the phone through USB-C OTG in the reference arrangement (or another suitable regulated 5 V source). **The phone communicates with the camera over local Wi-Fi/HTTP, not USB data.** The cable's data conductors are unused in the documented power-only wiring.
 
-The design files are starting points, not universal-fit parts. Check board revision, camera module, glasses-arm dimensions, cable routing, and enclosure clearances before fabrication.
+The design files are starting points for a future wearable assembly, not universal-fit parts. The current working camera is not mounted on glasses. Before attempting integration, check board revision, camera module, glasses-arm dimensions, cable routing, enclosure clearances, weight distribution, and strain relief.
 
 See [BOM.md](BOM.md) for the component checklist. The firmware reference uses:
 
@@ -69,7 +69,11 @@ The reference build notes specify a polarized 220–330 µF / 10 V capacitor acr
 
 The AP password is also used for ArduinoOTA authentication. The HTTP camera API is unauthenticated for clients on the camera network; do not expose that network or OTA service to untrusted clients. See [SECURITY.md](../SECURITY.md).
 
-## 7. Fabricate and mount the enclosure
+## 7. Future glasses integration
+
+The repository includes glasses-mount and enclosure design files, but the current working ESP32-CAM is external and has not been mounted on a glasses frame. Treat mounting as a future mechanical integration task. Verify the actual board and camera dimensions, field of view, cable routing, weight distribution, strain relief, heat, and safe attachment before wearing any assembled prototype.
+
+## 8. Fabricate and mount the enclosure
 
 ![Enclosure component layout](images/enclosure-layout.svg)
 
@@ -85,7 +89,7 @@ The AP password is also used for ArduinoOTA authentication. The HTTP camera API 
 
 The repository also contains a laser-cut alternative under `hardware/laser/`. Confirm material thickness and dimensions before ordering or cutting.
 
-## 8. Set up the phone
+## 9. Set up the phone
 
 1. Use a recent Chrome for Android version on a device with WebGPU support.
 2. Serve the project from an HTTP/HTTPS origin supported by the browser. For local testing on the phone, run the server on the phone itself (for example, Termux) and open `http://localhost:8080/index.html`.
@@ -101,7 +105,7 @@ A simple local server can be started from the project directory with:
 python -m http.server 8080
 ```
 
-## 9. Interaction
+## 10. Interaction
 
 - **Short press:** capture a still image, describe it briefly, and read the result aloud.
 - **Long press:** capture a still image and enter question mode for that image.
@@ -109,7 +113,7 @@ python -m http.server 8080
 
 Exact timing and behaviour are controlled by the application and firmware versions in the repository.
 
-## 10. Testing and limitations
+## 11. Testing and limitations
 
 - Verify camera image and button events on a workbench.
 - Check that the camera points where intended and the image is upright and clear.
@@ -122,11 +126,11 @@ Known limitations include variable WebGPU support, phone memory limits, model la
 
 **Do not rely on OpenVision to cross streets, navigate hazards, identify people, read critical warnings, or make medical or safety decisions.** AI descriptions can be incomplete or incorrect. Keep ordinary situational awareness and other assistive tools in use.
 
-## 11. Privacy
+## 12. Privacy
 
 The intended design performs image inference locally on the phone. Network behaviour also depends on the browser, hosting origin, model download source, and third-party libraries. Review the app and dependencies before using sensitive images. The ESP32-CAM's local Wi-Fi network should use a unique password and should not be shared with untrusted users.
 
-## 12. Licences
+## 13. Licences
 
 - Software and firmware: Apache License 2.0.
 - Original hardware design files: CERN-OHL-P-2.0.
