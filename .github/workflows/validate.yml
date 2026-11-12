@@ -38,5 +38,15 @@ jobs:
             echo "::error::The previously published default password is still present."
             exit 1
           fi
+      - name: Compile ESP32-CAM firmware
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          echo "::add-path::$PWD/bin"
+          ./bin/arduino-cli core update-index
+          ./bin/arduino-cli core install esp32:esp32@2.0.17
+          cp firmware/openvision_cam/config.example.h firmware/openvision_cam/config.h
+          ./bin/arduino-cli compile --fqbn esp32:esp32:esp32wrover firmware/openvision_cam
       - name: Check whitespace errors
         run: git diff --check
