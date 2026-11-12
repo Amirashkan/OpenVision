@@ -1,9 +1,21 @@
+# Local model downloads
 models/
+
+# Local secrets/configuration
 .env
 .env.*
 !.env.example
 *.key
 *.pem
+firmware/openvision_cam/config.h
+
+# Generated media and local exports
+temp/
+dist/
+build/
+*.log
+
+# Platform/editor noise
 __pycache__/
 .DS_Store
 Thumbs.db

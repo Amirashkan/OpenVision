@@ -1,18 +1,17 @@
 SPDX-License-Identifier: CERN-OHL-P-2.0
 
 OpenVision original hardware design files in this repository are licensed
-under the CERN Open Hardware Licence Version 2 - Permissive.
+under CERN Open Hardware Licence Version 2 - Permissive (CERN-OHL-P-2.0).
 
-Official licence text:
-https://ohwr.org/cern_ohl_p_v2.txt
+The complete, unmodified licence text is provided in
+LICENSES/CERN-OHL-P-2.0.txt.
 
-The licence applies only to original hardware design material authored for
-OpenVision and explicitly covered by this notice. Third-party components,
-designs, trademarks, and other materials retain their own terms.
+This notice applies only to original OpenVision hardware design material
+authored for this project. Third-party components, designs, trademarks, and
+other materials retain their own terms.
 
-When redistributing covered design files, include the complete, unmodified
-CERN-OHL-P-2.0 licence text and retain the applicable notices. Modified
-design files must carry a notice describing the modification, including
-the date and a brief description.
+When redistributing covered design files, include the complete licence text
+and retain applicable notices. Modified design files must carry a notice
+describing the modification, including its date and a brief description.
 
-This notice does not imply endorsement by CERN.
+Use of this licence does not imply endorsement by CERN.

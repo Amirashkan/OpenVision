@@ -40,12 +40,19 @@
 #include "esp_http_server.h"
 #include <Preferences.h>      // image settings saved in flash
 
+// Copy config.example.h to config.h and set unique local credentials before compiling.
+#if __has_include("config.h")
+  #include "config.h"
+#else
+  #error "Missing config.h. Copy config.example.h to config.h and set your credentials."
+#endif
+
 // ===================== settings =====================
 #define USE_AP 1                          // 1: camera makes its own Wi-Fi. 0: joins your hotspot/router.
-const char* AP_SSID  = "OpenVision-Cam";
-const char* AP_PASS  = "openvision123";   // 8+ characters – change it
-const char* STA_SSID = "your-hotspot";    // only used when USE_AP is 0 (address is printed on Serial)
-const char* STA_PASS = "your-password";
+const char* AP_SSID  = OPENVISION_AP_SSID;
+const char* AP_PASS  = OPENVISION_AP_PASS; // also protects OTA; use a unique local secret
+const char* STA_SSID = OPENVISION_STA_SSID; // used only when USE_AP is 0
+const char* STA_PASS = OPENVISION_STA_PASS;
 
 const int BUTTON_PIN = 13;                // button between IO13 and GND
 const int LED_PIN    = 33;                // small red LED on the back, LOW = on
