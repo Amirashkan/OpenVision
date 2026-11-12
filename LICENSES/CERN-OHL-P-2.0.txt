@@ -1,5 +1,3 @@
-Copyright (C) 2020 Jared Boone <jared@sharebrained.com>
-
 CERN Open Hardware Licence Version 2 - Permissive
 
 
