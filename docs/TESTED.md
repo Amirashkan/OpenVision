@@ -13,7 +13,7 @@ The current working hardware prototype uses a separate ESP32-CAM module that com
 | Phone | Samsung Galaxy S24 FE | Original development target; record exact OS/build when re-tested |
 | Browser | Chrome for Android with WebGPU | Target environment; exact tested version not recorded here |
 | Inference | Transformers.js 4.3.2, WebGPU | Pinned import in `index.html`; device/model combinations need per-model test records |
-| Camera | External ESP32-CAM module | User-reported working camera-to-phone Wi-Fi prototype; exact board/sensor revision is not recorded here. Camera is not mounted on the glasses frame. |
+| Camera | External ESP32-CAM; camera module marking: HDF3M-811-V1; additional printed marking: "ISM2 4G 802.11" | User-reported working camera-to-phone Wi-Fi prototype. The markings do not establish the ESP32 controller-board model or conclusively identify the image sensor; OV2640 remains unconfirmed. Camera is not mounted on the glasses frame. |
 | Firmware toolchain | Espressif Arduino-ESP32 core | Source notes 2.0.x or 3.x; exact known-good version is not yet established |
 
 ## Test record template
