@@ -1,20 +1,41 @@
-
-name: Export OpenVision Video
+name: Repository checks
 
 on:
+  push:
+    branches: [main, "maintenance/**"]
+  pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  export:
+  repository-checks:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Check out source
         uses: actions/checkout@v4
-
-      - name: Package video and TTS files
-        uses: actions/upload-artifact@v4
-        with:
-          name: openvision-edit-assets
-          path: temp/
-          if-no-files-found: error
-          retention-days: 1
+      - name: Verify required project files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f README.md
+          test -f index.html
+          test -f firmware/openvision_cam/openvision_cam.ino
+          test -f firmware/openvision_cam/config.example.h
+          test -f docs/Public_Build_Guide.md
+          test -f docs/BOM.md
+          test -f SECURITY.md
+          test -f LICENSE
+          test -f LICENSES/CERN-OHL-P-2.0.txt
+          echo "Required project files are present."
+      - name: Check for known published default credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R --exclude-dir=.git --exclude='*.md' -n 'openvision123' .; then
+            echo "::error::The previously published default password is still present."
+            exit 1
+          fi
+      - name: Check whitespace errors
+        run: git diff --check
