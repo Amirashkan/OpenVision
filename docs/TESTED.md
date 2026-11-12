@@ -4,7 +4,7 @@ This file distinguishes development targets from verified compatibility. Do not 
 
 ## Current prototype status
 
-The current working hardware prototype uses a separate ESP32-CAM module that communicates with the phone over its Wi-Fi access point. The phone hosts the browser application and local model inference. The camera is not physically mounted on the glasses frame. This status records the user's description of the working setup; it is not an independent re-test of this maintenance branch.
+The current working hardware prototype uses a separate ESP32-CAM module that communicates with the phone over its Wi-Fi access point. The phone hosts the browser application and local model inference. The camera is not physically mounted on the glasses frame. This records maintainer-reported operation; the setup has not been independently reproduced as part of this release.
 
 ## Known development target
 
