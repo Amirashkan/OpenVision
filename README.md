@@ -1,8 +1,8 @@
 # OpenVision
 
-**An experimental, phone-based vision assistant controlled by a camera and button mounted on ordinary glasses.**
+**An experimental phone-based vision assistant using an external ESP32-CAM and a phone.**
 
-OpenVision captures a still image from a small glasses-mounted camera and passes it to a vision-language model running locally in the phone's browser. The model describes the scene or answers a spoken question about that frame. The phone can read the response aloud in Persian or English.
+In the current working hardware prototype, a separate ESP32-CAM captures a still image and sends it to the phone over its Wi-Fi access point. A vision-language model runs locally in the phone's browser. The camera is not yet mounted on the glasses frame; wearable mounting is a future integration step. The model describes the scene or answers a spoken question about that frame. The phone can read the response aloud in Persian or English.
 
 The current prototype targets Chrome for Android on a phone with WebGPU support. Model inference runs in the browser through [Transformers.js](https://github.com/huggingface/transformers.js). Image inference is intended to remain on-device; this does **not** mean the complete application is self-contained or permanently offline.
 
@@ -10,7 +10,7 @@ The current prototype targets Chrome for Android on a phone with WebGPU support.
 
 ## How it works
 
-1. A camera captures one still frame when requested.
+1. The external ESP32-CAM captures one still frame when requested and makes it available to the phone over local Wi-Fi.
 2. The phone passes the image to a vision-language model running in the browser.
 3. The model generates a short description or answers a question about that image.
 4. Android text-to-speech can read the response aloud.
@@ -42,7 +42,7 @@ Check each model's upstream licence and usage conditions before use. Model avail
    ```
 
    Then open `http://localhost:8080/` in Chrome on that device. If the server runs on another computer, use that computer's reachable LAN address instead of `localhost`; browser security restrictions may differ.
-4. Configure and connect the ESP32-CAM if using the hardware build.
+4. Configure and connect the external ESP32-CAM to the phone over its Wi-Fi access point.
 5. Load a model while internet access is available, then explicitly test the desired offline scenario.
 
 ## Firmware credentials
@@ -55,7 +55,7 @@ See [SECURITY.md](SECURITY.md) before connecting the camera to a network.
 
 - `index.html` — phone-side web application and inference worker.
 - `firmware/openvision_cam/` — ESP32-CAM firmware and local configuration template.
-- `hardware/` — parametric OpenSCAD parts, STL prints, and laser-cut DXF designs.
+- `hardware/` — parametric OpenSCAD parts, STL prints, and laser-cut DXF designs for future physical integration; these files do not indicate that the camera is already mounted on glasses.
 - `docs/Public_Build_Guide.md` — public-facing build and setup guide.
 - `docs/BOM.md` — reference bill of materials and unresolved measurements.
 - `docs/TESTED.md` — compatibility status and test-record template.
